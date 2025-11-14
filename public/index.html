@@ -66,9 +66,6 @@
         document.addEventListener('DOMContentLoaded', () => {
 
             // === Bagian Setup ===
-            // Logika IndexedDB DIHAPUS
-
-            // Elemen UI
             const tabs = document.querySelectorAll('.tab-link');
             const tabPanes = document.querySelectorAll('.tab-pane');
             const contentForm = document.getElementById('content-form');
@@ -79,7 +76,6 @@
             const cardsContainer = document.getElementById('content-cards-container');
             const noContentMessage = document.getElementById('no-content-message');
 
-            // SweetAlert Top-End Notifier
             const Toast = Swal.mixin({
                 toast: true,
                 position: 'top-end',
@@ -111,10 +107,10 @@
                     switchTab(targetId);
                 });
             });
-            switchTab('#dashboard-tab'); // Set tab default
+            switchTab('#dashboard-tab');
 
             
-            // === Bagian CRUD (diganti dengan Fetch API) ===
+            // === Bagian CRUD (Fetch API) ===
 
             // Create & Update (POST & PUT)
             contentForm.addEventListener('submit', async (event) => {
@@ -210,7 +206,7 @@
                 });
             }
 
-            // === Bagian Helper & Rendering (Sedikit Modifikasi) ===
+            // === Bagian Helper & Rendering (Perbaikan di sini) ===
 
             function renderCards(items) {
                 cardsContainer.innerHTML = '';
@@ -222,10 +218,16 @@
 
                 noContentMessage.classList.add('hidden');
                 
-                // Server sudah mengurutkan, tapi kita pakai reverse agar yang terbaru (ID terbesar) ada di depan
-                // Jika Anda ingin urutan berdasarkan ID (1, 2, 3..), hapus .reverse()
-                items.slice().reverse().forEach((item, index) => {
-                    const displayIndex = items.length - index; // Hitung mundur untuk nomor
+                // **PERBAIKAN:**
+                // Hapus '.slice().reverse()'.
+                // 'items' dari server sudah diurutkan berdasarkan ID (1, 2, 3...).
+                // Kita langsung loop saja.
+                items.forEach((item, index) => {
+                    
+                    // **PERBAIKAN:**
+                    // Gunakan 'index + 1' untuk membuat penomoran (1, 2, 3...)
+                    const displayIndex = index + 1; 
+                    
                     const card = createCardElement(item, displayIndex);
                     cardsContainer.appendChild(card);
                 });
@@ -236,8 +238,10 @@
                 card.className = 'bg-white p-4 rounded-lg shadow border border-blue-100 flex flex-col';
 
                 const title = document.createElement('h3');
-                title.className = 'text-xl font.bold text-blue-800 mb-2';
-                // Gunakan displayIndex untuk penomoran
+                // (Perbaikan typo kecil: font.bold -> font-bold)
+                title.className = 'text-xl font-bold text-blue-800 mb-2'; 
+                
+                // 'displayIndex' sekarang akan 1, 2, 3... secara berurutan
                 title.textContent = `Konten #${displayIndex}`;
 
                 const description = document.createElement('p');
@@ -255,7 +259,7 @@
                 const deleteButton = document.createElement('button');
                 deleteButton.className = 'px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600';
                 deleteButton.textContent = 'Delete';
-                deleteButton.onclick = () => deleteContent(item.id); // Kirim ID asli dari database
+                deleteButton.onclick = () => deleteContent(item.id); // Gunakan ID asli dari DB
 
                 const copyButton = document.createElement('button');
                 copyButton.className = 'px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600';
@@ -269,7 +273,7 @@
             }
 
             function populateFormForUpdate(item) {
-                formIdInput.value = item.id; // Pastikan ID tersimpan di form
+                formIdInput.value = item.id;
                 formDescription.value = item.description;
                 submitButton.textContent = 'Update Content';
                 cancelButton.classList.remove('hidden');
