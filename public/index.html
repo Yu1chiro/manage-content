@@ -40,6 +40,13 @@
         <div id="tabContent">
 
             <div id="dashboard-tab" class="tab-pane p-4 bg-white rounded-lg shadow-inner">
+                
+                <div class="flex justify-end mb-4">
+                    <button id="remove-all-button" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 hidden">
+                        Remove All Data
+                    </button>
+                </div>
+
                 <div id="content-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <p id="no-content-message" class="text-gray-500 col-span-full text-center">Loading content...</p>
                 </div>
@@ -75,6 +82,9 @@
             const cancelButton = document.getElementById('form-cancel-button');
             const cardsContainer = document.getElementById('content-cards-container');
             const noContentMessage = document.getElementById('no-content-message');
+            
+            // [BARU] Ambil tombol remove all
+            const removeAllButton = document.getElementById('remove-all-button');
 
             const Toast = Swal.mixin({
                 toast: true,
@@ -115,43 +125,29 @@
             // Create & Update (POST & PUT)
             contentForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
-
                 const description = formDescription.value;
                 const id = formIdInput.value;
-
                 let url = '/api/content';
                 let method = 'POST';
                 const body = JSON.stringify({ description });
-
                 if (id) {
                     url = `/api/content/${id}`;
                     method = 'PUT';
                 }
-
                 try {
                     const response = await fetch(url, {
                         method: method,
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: body,
                     });
-
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    
-                    const result = await response.json();
-                    
+                    if (!response.ok) throw new Error('Network response was not ok');
                     Toast.fire({ 
                         icon: 'success', 
                         title: id ? 'Content updated!' : 'Content added!' 
                     });
-                    
                     resetForm();
                     fetchContent();
                     switchTab('#dashboard-tab');
-
                 } catch (error) {
                     console.error('Error saving content:', error);
                     Toast.fire({ icon: 'error', title: 'Operation failed!' });
@@ -162,9 +158,7 @@
             async function fetchContent() {
                 try {
                     const response = await fetch('/api/content');
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
+                    if (!response.ok) throw new Error('Network response was not ok');
                     const contentItems = await response.json();
                     renderCards(contentItems);
                 } catch (error) {
@@ -190,14 +184,9 @@
                             const response = await fetch(`/api/content/${id}`, {
                                 method: 'DELETE',
                             });
-
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok');
-                            }
-                            
+                            if (!response.ok) throw new Error('Network response was not ok');
                             Toast.fire({ icon: 'success', title: 'Content deleted!' });
-                            fetchContent(); // Muat ulang data
-                            
+                            fetchContent();
                         } catch (error) {
                             console.error('Error deleting content:', error);
                             Toast.fire({ icon: 'error', title: 'Delete failed!' });
@@ -206,31 +195,54 @@
                 });
             }
 
-            // === Bagian Helper & Rendering (Perbaikan di sini) ===
+            // [BARU] Fungsi untuk menghapus semua data
+            async function handleRemoveAll() {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "This will PERMANENTLY delete ALL data!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33', // Merah untuk tombol konfirmasi
+                    cancelButtonColor: '#3085d6', // Biru untuk tombol batal
+                    confirmButtonText: 'Yes, delete all!'
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        try {
+                            const response = await fetch('/api/content/all', {
+                                method: 'DELETE',
+                            });
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            Toast.fire({ icon: 'success', title: 'All data removed!' });
+                            fetchContent(); // Muat ulang data (akan kosong)
+                        } catch (error) {
+                            console.error('Error removing all content:', error);
+                            Toast.fire({ icon: 'error', title: 'Operation failed!' });
+                        }
+                    }
+                });
+            }
+
+
+            // === Bagian Helper & Rendering ===
 
             function renderCards(items) {
                 cardsContainer.innerHTML = '';
                 if (items.length === 0) {
                     noContentMessage.textContent = 'Belum ada konten. Silakan tambahkan di tab "Add New".';
                     noContentMessage.classList.remove('hidden');
-                    return;
+                    // [BARU] Sembunyikan tombol jika tidak ada data
+                    removeAllButton.classList.add('hidden'); 
+                } else {
+                    noContentMessage.classList.add('hidden');
+                    // [BARU] Tampilkan tombol jika ada data
+                    removeAllButton.classList.remove('hidden'); 
+                    
+                    items.forEach((item, index) => {
+                        const displayIndex = index + 1; 
+                        const card = createCardElement(item, displayIndex);
+                        cardsContainer.appendChild(card);
+                    });
                 }
-
-                noContentMessage.classList.add('hidden');
-                
-                // **PERBAIKAN:**
-                // Hapus '.slice().reverse()'.
-                // 'items' dari server sudah diurutkan berdasarkan ID (1, 2, 3...).
-                // Kita langsung loop saja.
-                items.forEach((item, index) => {
-                    
-                    // **PERBAIKAN:**
-                    // Gunakan 'index + 1' untuk membuat penomoran (1, 2, 3...)
-                    const displayIndex = index + 1; 
-                    
-                    const card = createCardElement(item, displayIndex);
-                    cardsContainer.appendChild(card);
-                });
             }
 
             function createCardElement(item, displayIndex) {
@@ -238,10 +250,7 @@
                 card.className = 'bg-white p-4 rounded-lg shadow border border-blue-100 flex flex-col';
 
                 const title = document.createElement('h3');
-                // (Perbaikan typo kecil: font.bold -> font-bold)
-                title.className = 'text-xl font-bold text-blue-800 mb-2'; 
-                
-                // 'displayIndex' sekarang akan 1, 2, 3... secara berurutan
+                title.className = 'text-xl font-bold text-blue-800 mb-2';
                 title.textContent = `Konten #${displayIndex}`;
 
                 const description = document.createElement('p');
@@ -259,7 +268,7 @@
                 const deleteButton = document.createElement('button');
                 deleteButton.className = 'px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600';
                 deleteButton.textContent = 'Delete';
-                deleteButton.onclick = () => deleteContent(item.id); // Gunakan ID asli dari DB
+                deleteButton.onclick = () => deleteContent(item.id);
 
                 const copyButton = document.createElement('button');
                 copyButton.className = 'px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600';
@@ -299,6 +308,9 @@
                 resetForm();
                 switchTab('#dashboard-tab');
             });
+
+            // [BARU] Tambahkan listener untuk tombol remove all
+            removeAllButton.addEventListener('click', handleRemoveAll);
 
             // === Inisialisasi Aplikasi ===
             fetchContent(); // Muat data dari server saat halaman dibuka

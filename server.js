@@ -9,7 +9,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Setup koneksi NeonDB (PostgreSQL)
-// Pastikan DATABASE_URL ada di file .env Anda!
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
@@ -103,15 +102,31 @@ app.delete('/api/content/:id', async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Content not found' });
     }
-    res.json({ message: 'Content deleted' }); // atau res.sendStatus(204)
+    res.json({ message: 'Content deleted' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
+
+// === [BARU] RUTE DELETE UNTUK TRUNCATE ===
+// DELETE: Menghapus SELURUH konten (TRUNCATE)
+app.delete('/api/content/all', async (req, res) => {
+  try {
+    // TRUNCATE lebih cepat dari DELETE FROM * dan me-reset counter SERIAL
+    // RESTART IDENTITY akan membuat ID mulai dari 1 lagi
+    await pool.query('TRUNCATE TABLE content RESTART IDENTITY');
+    res.status(200).json({ message: 'All content successfully truncated' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 // Menjalankan server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  initDb(); // Inisialisasi DB saat server start
+console.log(`Server running on http://localhost:${PORT}`);
+initDb(); // Inisialisasi DB saat server start
 });
