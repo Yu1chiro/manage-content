@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Deck</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        stone: { 50:'#fafaf9', 100:'#f5f5f4', 200:'#e7e5e4', 300:'#d6d3d1', 400:'#a8a29e', 500:'#78716c', 600:'#57534e', 700:'#44403c', 800:'#292524', 900:'#1c1917', 950:'#0c0a09' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        body { scrollbar-width: none; -ms-overflow-style: none; }
+        body::-webkit-scrollbar { display: none; }
+        .transition-theme { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800 dark:bg-stone-950 dark:text-stone-200 transition-theme min-h-screen font-sans">
+    <div class="container mx-auto max-w-5xl p-6">
+        <header class="flex justify-between items-center mb-6 mt-4">
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="p-2 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors text-stone-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                </a>
+                <div>
+                    <h1 id="deck-header-title" class="text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">Loading...</h1>
+                    <p class="text-sm text-stone-500 dark:text-stone-400 mt-1">Manage content for this deck.</p>
+                </div>
+            </div>
+            <button id="theme-toggle" class="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors">
+                <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+            </button>
+        </header>
+
+        <!-- Layout Full Width Form di Atas, Grid di Bawah -->
+        <div class="flex flex-col gap-8">
+            
+            <!-- Bagian Form -->
+            <div class="w-full">
+                <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl p-6 shadow-sm">
+                    <h2 class="text-lg font-medium mb-4 text-stone-900 dark:text-stone-100">Add Content</h2>
+                    <form id="add-content-form">
+                        <textarea id="content-desc" rows="4" class="w-full bg-stone-50 dark:bg-stone-950 border border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100 text-sm rounded-lg focus:ring-1 focus:ring-stone-500 focus:border-stone-500 p-3 outline-none resize-none mb-4" placeholder="Write something..." required></textarea>
+                        <button type="submit" class="w-full text-white bg-stone-800 hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-200 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors">Add to Deck</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Bagian Grid -->
+            <div class="w-full">
+                <div id="content-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="col-span-full text-center py-10 text-stone-500 bg-stone-100 dark:bg-stone-900 rounded-xl border-dashed border border-stone-300 dark:border-stone-800">
+                        Loading content...
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const deckId = params.get('id');
+            if(!deckId) window.location.href = 'index.html';
+
+            const html = document.documentElement;
+            const themeToggle = document.getElementById('theme-toggle');
+            const iconSun = document.getElementById('theme-icon-sun');
+            const iconMoon = document.getElementById('theme-icon-moon');
+            const form = document.getElementById('add-content-form');
+            const grid = document.getElementById('content-grid');
+            const titleEl = document.getElementById('deck-header-title');
+
+            // SETUP TOAST (Posisi Top-End)
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                background: document.documentElement.classList.contains('dark') ? '#1c1917' : '#ffffff',
+                color: document.documentElement.classList.contains('dark') ? '#e7e5e4' : '#292524',
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                }
+            });
+
+            function initTheme() {
+                const storedTheme = localStorage.getItem('theme');
+                if (storedTheme === 'dark' || (!storedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    html.classList.add('dark'); iconSun.classList.remove('hidden'); iconMoon.classList.add('hidden');
+                } else {
+                    html.classList.remove('dark'); iconSun.classList.add('hidden'); iconMoon.classList.remove('hidden');
+                }
+            }
+
+            themeToggle.addEventListener('click', () => {
+                html.classList.toggle('dark');
+                if (html.classList.contains('dark')) {
+                    localStorage.setItem('theme', 'dark'); iconSun.classList.remove('hidden'); iconMoon.classList.add('hidden');
+                } else {
+                    localStorage.setItem('theme', 'light'); iconSun.classList.add('hidden'); iconMoon.classList.remove('hidden');
+                }
+            });
+
+            async function loadDeck() {
+                try {
+                    const res = await fetch(`/api/decks/${deckId}`);
+                    if(!res.ok) throw new Error();
+                    const data = await res.json();
+                    titleEl.textContent = data.title;
+                    renderContent(data.contents);
+                } catch(err) {
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Deck not found' }).then(() => window.location.href = 'index.html');
+                }
+            }
+
+            function renderContent(contents) {
+                grid.innerHTML = '';
+                if(!contents || contents.length === 0) {
+                    grid.innerHTML = '<div class="col-span-full text-center py-10 text-stone-500 bg-stone-100 dark:bg-stone-900 rounded-xl border-dashed border border-stone-300 dark:border-stone-800">No content yet. Add some!</div>';
+                    return;
+                }
+                contents.forEach(item => {
+                    const card = document.createElement('div');
+                    // Tambahkan overflow-hidden untuk keamanan
+                    card.className = 'bg-white dark:bg-stone-900 p-5 rounded-xl border border-stone-200 dark:border-stone-800 flex flex-col group overflow-hidden';
+                    
+                    const text = document.createElement('p');
+                    // Tambahkan break-words agar URL panjang tidak bablass
+                    text.className = 'text-stone-800 dark:text-stone-200 text-sm whitespace-pre-wrap break-words flex-grow mb-4';
+                    text.textContent = item.description;
+
+                    const actions = document.createElement('div');
+                    actions.className = 'flex justify-end gap-2 mt-auto opacity-0 group-hover:opacity-100 transition-opacity';
+
+                    const copyBtn = document.createElement('button');
+                    copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+                    copyBtn.className = 'p-1.5 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors';
+                    copyBtn.onclick = () => {
+                        navigator.clipboard.writeText(item.description);
+                        Toast.fire({ icon: 'success', title: 'Copied' });
+                    };
+
+                    const delBtn = document.createElement('button');
+                    delBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+                    delBtn.className = 'p-1.5 text-stone-400 hover:text-red-500 rounded hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors';
+                    delBtn.onclick = () => deleteContent(item.id);
+
+                    actions.append(copyBtn, delBtn);
+                    card.append(text, actions);
+                    grid.appendChild(card);
+                });
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const description = document.getElementById('content-desc').value;
+                try {
+                    const res = await fetch(`/api/decks/${deckId}/contents`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ description })
+                    });
+                    if(!res.ok) throw new Error();
+                    document.getElementById('content-desc').value = '';
+                    Toast.fire({ icon: 'success', title: 'Added' });
+                    loadDeck();
+                } catch(err) {
+                    Toast.fire({ icon: 'error', title: 'Failed' });
+                }
+            });
+
+            async function deleteContent(contentId) {
+                const isDark = html.classList.contains('dark');
+                Swal.fire({
+                    title: 'Delete?', icon: 'warning', showCancelButton: true,
+                    confirmButtonColor: '#ef4444', cancelButtonColor: isDark ? '#44403c' : '#d6d3d1',
+                    background: isDark ? '#1c1917' : '#ffffff', color: isDark ? '#e7e5e4' : '#292524'
+                }).then(async (res) => {
+                    if(res.isConfirmed) {
+                        await fetch(`/api/decks/${deckId}/contents/${contentId}`, { method: 'DELETE' });
+                        loadDeck();
+                        Toast.fire({ icon: 'success', title: 'Deleted' });
+                    }
+                });
+            }
+
+            initTheme();
+            loadDeck();
+        });
+    </script>
+</body>
+</html>

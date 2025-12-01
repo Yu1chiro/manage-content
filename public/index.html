@@ -1,321 +1,243 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Social Content Manager</title>
+    <title>Content management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        stone: { 50: '#fafaf9', 100: '#f5f5f4', 200: '#e7e5e4', 300: '#d6d3d1', 400: '#a8a29e', 500: '#78716c', 600: '#57534e', 700: '#44403c', 800: '#292524', 900: '#1c1917', 950: '#0c0a09' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
     <style>
-        body { scrollbar-width: none; -ms-overflow-style: none; }
-        body::-webkit-scrollbar { display: none; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+        body {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        body::-webkit-scrollbar {
+            display: none;
+        }
+
+        .transition-theme {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
     </style>
 </head>
-<body class="bg-blue-50">
 
-    <div class="container mx-auto max-w-4xl p-4">
-
-        <header class="my-6">
-            <h1 class="text-4xl font-bold text-center text-blue-800">
-                Social Content Manager
-            </h1>
+<body class="bg-stone-50 text-stone-800 dark:bg-stone-950 dark:text-stone-200 transition-theme min-h-screen font-sans">
+    <div class="container mx-auto max-w-4xl p-6">
+        <header class="flex justify-between items-center mb-10 mt-4">
+            <div>
+                <h1 class="text-2xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">Content management</h1>
+                <p class="text-sm text-stone-500 dark:text-stone-400 mt-1">By realtime database for tiktok account</p>
+            </div>
+            <button id="theme-toggle"
+                class="p-2 rounded-full hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors">
+                <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            </button>
         </header>
 
-        <div class="mb-4 border-b border-blue-200">
-            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="myTab">
-                <li class="mr-2">
-                    <button class="tab-link inline-block p-4 border-b-2 rounded-t-lg" data-tab-target="#dashboard-tab">
-                        My Content
-                    </button>
-                </li>
-                <li class="mr-2">
-                    <button class="tab-link inline-block p-4 border-b-2 rounded-t-lg" data-tab-target="#form-tab">
-                        Add New
-                    </button>
-                </li>
-            </ul>
+        <div class="mb-8">
+            <nav class="flex space-x-1 bg-stone-100 dark:bg-stone-900 p-1 rounded-lg w-max mx-auto sm:mx-0">
+                <button class="tab-link px-4 py-1.5 text-sm font-medium rounded-md transition-all"
+                    data-tab-target="#dashboard-tab">My Decks</button>
+                <button class="tab-link px-4 py-1.5 text-sm font-medium rounded-md transition-all"
+                    data-tab-target="#create-tab">Create Deck</button>
+            </nav>
         </div>
 
-        <div id="tabContent">
-
-            <div id="dashboard-tab" class="tab-pane p-4 bg-white rounded-lg shadow-inner">
-                
-                <div class="flex justify-end mb-4">
-                    <button id="remove-all-button" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 hidden">
-                        Remove All Data
-                    </button>
-                </div>
-
-                <div id="content-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <p id="no-content-message" class="text-gray-500 col-span-full text-center">Loading content...</p>
+        <div id="tabContent" class="relative">
+            <div id="dashboard-tab" class="tab-pane fade-in">
+                <div id="deck-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <p id="no-content-message" class="text-stone-500 col-span-full text-center py-12">Loading decks...
+                    </p>
                 </div>
             </div>
 
-            <div id="form-tab" class="tab-pane p-4 bg-white rounded-lg shadow-inner hidden">
-                <form id="content-form">
-                    <input type="hidden" id="content-id">
-                    <div class="mb-5">
-                        <label for="description" class="block mb-2 text-sm font-medium text-blue-900">Description</label>
-                        <textarea id="description" rows="6" class="bg-gray-50 border border-blue-300 text-blue-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Tulis deskripsi konten di sini..." required></textarea>
-                    </div>
-                    <button type="submit" id="form-submit-button" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center">
-                        Save Content
-                    </button>
-                    <button type="button" id="form-cancel-button" class="text-gray-900 bg-white hover:bg-gray-100 border border-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-200 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center ml-2 hidden">
-                        Cancel Update
-                    </button>
-                </form>
+            <div id="create-tab" class="tab-pane hidden fade-in">
+                <div
+                    class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl p-6 shadow-sm max-w-lg mx-auto">
+                    <form id="create-deck-form">
+                        <div class="mb-6">
+                            <label for="deck-title"
+                                class="block mb-2 text-sm font-medium text-stone-700 dark:text-stone-300">Deck
+                                Title</label>
+                            <input type="text" id="deck-title"
+                                class="w-full bg-stone-50 dark:bg-stone-950 border border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100 text-sm rounded-lg focus:ring-1 focus:ring-stone-500 focus:border-stone-500 p-3 outline-none transition-colors"
+                                placeholder="e.g., Q1 Marketing Ideas" required>
+                        </div>
+                        <button type="submit"
+                            class="w-full text-white bg-stone-800 hover:bg-stone-700 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-200 focus:ring-4 focus:ring-stone-300 font-medium rounded-lg text-sm px-5 py-2.5 transition-colors">Create
+                            Deck</button>
+                    </form>
+                </div>
             </div>
         </div>
+    </div>
 
-    </div> <script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
-
-            // === Bagian Setup ===
+            const html = document.documentElement;
+            const themeToggle = document.getElementById('theme-toggle');
+            const iconSun = document.getElementById('theme-icon-sun');
+            const iconMoon = document.getElementById('theme-icon-moon');
             const tabs = document.querySelectorAll('.tab-link');
             const tabPanes = document.querySelectorAll('.tab-pane');
-            const contentForm = document.getElementById('content-form');
-            const formDescription = document.getElementById('description');
-            const formIdInput = document.getElementById('content-id');
-            const submitButton = document.getElementById('form-submit-button');
-            const cancelButton = document.getElementById('form-cancel-button');
-            const cardsContainer = document.getElementById('content-cards-container');
+            const createDeckForm = document.getElementById('create-deck-form');
+            const deckCardsContainer = document.getElementById('deck-cards-container');
             const noContentMessage = document.getElementById('no-content-message');
-            
-            // [BARU] Ambil tombol remove all
-            const removeAllButton = document.getElementById('remove-all-button');
 
             const Toast = Swal.mixin({
                 toast: true,
-                position: 'top-end',
+                position: 'top-end', // Ubah posisi ke pojok kanan atas
                 showConfirmButton: false,
                 timer: 3000,
                 timerProgressBar: true,
+                background: document.documentElement.classList.contains('dark') ? '#1c1917' : '#ffffff',
+                color: document.documentElement.classList.contains('dark') ? '#e7e5e4' : '#292524',
                 didOpen: (toast) => {
                     toast.addEventListener('mouseenter', Swal.stopTimer);
                     toast.addEventListener('mouseleave', Swal.resumeTimer);
                 }
             });
 
-            // === Bagian Navigasi Tab (SPA) ===
+            function initTheme() {
+                const storedTheme = localStorage.getItem('theme');
+                if (storedTheme === 'dark' || (!storedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    html.classList.add('dark'); iconSun.classList.remove('hidden'); iconMoon.classList.add('hidden');
+                } else {
+                    html.classList.remove('dark'); iconSun.classList.add('hidden'); iconMoon.classList.remove('hidden');
+                }
+            }
+
+            themeToggle.addEventListener('click', () => {
+                html.classList.toggle('dark');
+                if (html.classList.contains('dark')) {
+                    localStorage.setItem('theme', 'dark'); iconSun.classList.remove('hidden'); iconMoon.classList.add('hidden');
+                } else {
+                    localStorage.setItem('theme', 'light'); iconSun.classList.add('hidden'); iconMoon.classList.remove('hidden');
+                }
+            });
+
             function switchTab(targetId) {
                 tabPanes.forEach(pane => pane.classList.add('hidden'));
                 tabs.forEach(tab => {
-                    tab.classList.remove('text-blue-600', 'border-blue-600');
-                    tab.classList.add('text-gray-500', 'border-transparent', 'hover:text-gray-600', 'hover:border-gray-300');
+                    tab.classList.remove('bg-white', 'text-stone-900', 'shadow-sm', 'dark:bg-stone-800', 'dark:text-stone-100');
+                    tab.classList.add('text-stone-500', 'hover:text-stone-700', 'dark:text-stone-400', 'dark:hover:text-stone-200');
                 });
                 document.querySelector(targetId).classList.remove('hidden');
                 const activeTab = document.querySelector(`[data-tab-target="${targetId}"]`);
-                activeTab.classList.add('text-blue-600', 'border-blue-600');
-                activeTab.classList.remove('text-gray-500', 'border-transparent', 'hover:text-gray-600', 'hover:border-gray-300');
+                activeTab.classList.remove('text-stone-500', 'hover:text-stone-700', 'dark:text-stone-400', 'dark:hover:text-stone-200');
+                activeTab.classList.add('bg-white', 'text-stone-900', 'shadow-sm', 'dark:bg-stone-800', 'dark:text-stone-100');
             }
 
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const targetId = tab.getAttribute('data-tab-target');
-                    switchTab(targetId);
-                });
-            });
-            switchTab('#dashboard-tab');
+            tabs.forEach(tab => tab.addEventListener('click', () => switchTab(tab.getAttribute('data-tab-target'))));
 
-            
-            // === Bagian CRUD (Fetch API) ===
-
-            // Create & Update (POST & PUT)
-            contentForm.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                const description = formDescription.value;
-                const id = formIdInput.value;
-                let url = '/api/content';
-                let method = 'POST';
-                const body = JSON.stringify({ description });
-                if (id) {
-                    url = `/api/content/${id}`;
-                    method = 'PUT';
-                }
+            createDeckForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const title = document.getElementById('deck-title').value;
                 try {
-                    const response = await fetch(url, {
-                        method: method,
+                    const res = await fetch('/api/decks', {
+                        method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: body,
+                        body: JSON.stringify({ title })
                     });
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    Toast.fire({ 
-                        icon: 'success', 
-                        title: id ? 'Content updated!' : 'Content added!' 
-                    });
-                    resetForm();
-                    fetchContent();
-                } catch (error) {
-                    console.error('Error saving content:', error);
-                    Toast.fire({ icon: 'error', title: 'Operation failed!' });
+                    if (!res.ok) throw new Error();
+                    Toast.fire({ icon: 'success', title: 'Deck Created' });
+                    document.getElementById('deck-title').value = '';
+                    fetchDecks();
+                    switchTab('#dashboard-tab');
+                } catch (err) {
+                    Toast.fire({ icon: 'error', title: 'Failed to create deck' });
                 }
             });
 
-            // Read (GET)
-            async function fetchContent() {
+            async function fetchDecks() {
                 try {
-                    const response = await fetch('/api/content');
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    const contentItems = await response.json();
-                    renderCards(contentItems);
-                } catch (error) {
-                    console.error('Error fetching content:', error);
-                    noContentMessage.textContent = 'Error loading content.';
-                    Toast.fire({ icon: 'error', title: 'Failed to load content!' });
+                    const res = await fetch('/api/decks');
+                    const decks = await res.json();
+                    renderDecks(decks);
+                } catch (err) {
+                    noContentMessage.textContent = 'Failed to load decks.';
                 }
             }
 
-            // Delete (DELETE)
-            function deleteContent(id) {
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: "You won't be able to revert this!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, delete it!'
-                }).then(async (result) => {
-                    if (result.isConfirmed) {
-                        try {
-                            const response = await fetch(`/api/content/${id}`, {
-                                method: 'DELETE',
-                            });
-                            if (!response.ok) throw new Error('Network response was not ok');
-                            Toast.fire({ icon: 'success', title: 'Content deleted!' });
-                            fetchContent();
-                        } catch (error) {
-                            console.error('Error deleting content:', error);
-                            Toast.fire({ icon: 'error', title: 'Delete failed!' });
-                        }
-                    }
-                });
-            }
-
-            // [BARU] Fungsi untuk menghapus semua data
-            async function handleRemoveAll() {
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: "This will PERMANENTLY delete ALL data!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33', // Merah untuk tombol konfirmasi
-                    cancelButtonColor: '#3085d6', // Biru untuk tombol batal
-                    confirmButtonText: 'Yes, delete all!'
-                }).then(async (result) => {
-                    if (result.isConfirmed) {
-                        try {
-                            const response = await fetch('/api/content/all', {
-                                method: 'DELETE',
-                            });
-                            if (!response.ok) throw new Error('Network response was not ok');
-                            Toast.fire({ icon: 'success', title: 'All data removed!' });
-                            fetchContent(); // Muat ulang data (akan kosong)
-                        } catch (error) {
-                            console.error('Error removing all content:', error);
-                            Toast.fire({ icon: 'error', title: 'Operation failed!' });
-                        }
-                    }
-                });
-            }
-
-
-            // === Bagian Helper & Rendering ===
-
-            function renderCards(items) {
-                cardsContainer.innerHTML = '';
-                if (items.length === 0) {
-                    noContentMessage.textContent = 'Belum ada konten. Silakan tambahkan di tab "Add New".';
-                    noContentMessage.classList.remove('hidden');
-                    // [BARU] Sembunyikan tombol jika tidak ada data
-                    removeAllButton.classList.add('hidden'); 
+            function renderDecks(decks) {
+                deckCardsContainer.innerHTML = '';
+                if (decks.length === 0) {
+                    noContentMessage.textContent = 'No decks found. Create one to get started.';
+                    deckCardsContainer.appendChild(noContentMessage);
                 } else {
-                    noContentMessage.classList.add('hidden');
-                    // [BARU] Tampilkan tombol jika ada data
-                    removeAllButton.classList.remove('hidden'); 
-                    
-                    items.forEach((item, index) => {
-                        const displayIndex = index + 1; 
-                        const card = createCardElement(item, displayIndex);
-                        cardsContainer.appendChild(card);
+                    decks.forEach(deck => {
+                        const card = document.createElement('div');
+                        card.className = 'bg-white dark:bg-stone-900 p-6 rounded-xl border border-stone-200 dark:border-stone-800 hover:border-stone-400 dark:hover:border-stone-600 transition-all cursor-pointer group relative';
+                        card.onclick = (e) => {
+                            if (!e.target.closest('button')) window.location.href = `deck?id=${deck.id}`;
+                        };
+
+                        const title = document.createElement('h3');
+                        title.className = 'text-lg font-semibold text-stone-900 dark:text-stone-100 mb-2 group-hover:text-stone-600 dark:group-hover:text-stone-300 transition-colors';
+                        title.textContent = deck.title;
+
+                        const count = document.createElement('p');
+                        count.className = 'text-sm text-stone-500 dark:text-stone-400';
+                        count.textContent = `${deck.contentCount} items`;
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+                        deleteBtn.className = 'absolute top-4 right-4 text-stone-300 hover:text-red-500 transition-colors z-10';
+                        deleteBtn.onclick = (e) => deleteDeck(e, deck.id);
+
+                        card.append(deleteBtn, title, count);
+                        deckCardsContainer.appendChild(card);
                     });
                 }
             }
 
-            function createCardElement(item, displayIndex) {
-                const card = document.createElement('div');
-                card.className = 'bg-white p-4 rounded-lg shadow border border-blue-100 flex flex-col';
-
-                const title = document.createElement('h3');
-                title.className = 'text-xl font-bold text-blue-800 mb-2';
-                title.textContent = `Konten #${displayIndex}`;
-
-                const description = document.createElement('p');
-                description.className = 'text-gray-700 mb-4 flex-grow';
-                description.textContent = item.description;
-
-                const actions = document.createElement('div');
-                actions.className = 'flex space-x-2 mt-auto';
-
-                const updateButton = document.createElement('button');
-                updateButton.className = 'px-3 py-1 bg-yellow-400 text-white text-sm rounded hover:bg-yellow-500';
-                updateButton.textContent = 'Update';
-                updateButton.onclick = () => populateFormForUpdate(item);
-
-                const deleteButton = document.createElement('button');
-                deleteButton.className = 'px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600';
-                deleteButton.textContent = 'Delete';
-                deleteButton.onclick = () => deleteContent(item.id);
-
-                const copyButton = document.createElement('button');
-                copyButton.className = 'px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600';
-                copyButton.textContent = 'Copy';
-                copyButton.onclick = () => copyDescription(item.description);
-
-                actions.append(updateButton, deleteButton, copyButton);
-                card.append(title, description, actions);
-                
-                return card;
-            }
-
-            function populateFormForUpdate(item) {
-                formIdInput.value = item.id;
-                formDescription.value = item.description;
-                submitButton.textContent = 'Update Content';
-                cancelButton.classList.remove('hidden');
-                switchTab('#form-tab');
-            }
-
-            function copyDescription(description) {
-                navigator.clipboard.writeText(description).then(() => {
-                    Toast.fire({ icon: 'success', title: 'Description copied!' });
-                }).catch(err => {
-                    Toast.fire({ icon: 'error', title: 'Copy failed!' });
+            function deleteDeck(e, id) {
+                e.stopPropagation();
+                const isDark = html.classList.contains('dark');
+                Swal.fire({
+                    title: 'Delete Deck?', text: "All content inside will be lost.", icon: 'warning',
+                    showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: isDark ? '#44403c' : '#d6d3d1',
+                    confirmButtonText: 'Delete', background: isDark ? '#1c1917' : '#ffffff', color: isDark ? '#e7e5e4' : '#292524'
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        await fetch(`/api/decks/${id}`, { method: 'DELETE' });
+                        fetchDecks();
+                        Toast.fire({ icon: 'success', title: 'Deck Deleted' });
+                    }
                 });
             }
 
-            function resetForm() {
-                contentForm.reset();
-                formIdInput.value = '';
-                submitButton.textContent = 'Save Content';
-                cancelButton.classList.add('hidden');
-            }
-
-            cancelButton.addEventListener('click', () => {
-                resetForm();
-                switchTab('#dashboard-tab');
-            });
-
-            // [BARU] Tambahkan listener untuk tombol remove all
-            removeAllButton.addEventListener('click', handleRemoveAll);
-
-            // === Inisialisasi Aplikasi ===
-            fetchContent(); // Muat data dari server saat halaman dibuka
-
+            initTheme();
+            switchTab('#dashboard-tab');
+            fetchDecks();
         });
     </script>
-
 </body>
+
 </html>

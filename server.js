@@ -1,132 +1,144 @@
-// Import modules
-require('dotenv').config(); // Memuat variabel dari .env
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const { Pool } = require('pg'); // Package untuk koneksi PostgreSQL (NeonDB)
+const admin = require('firebase-admin');
 
-// Inisialisasi aplikasi Express
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Setup koneksi NeonDB (PostgreSQL)
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false // Diperlukan untuk NeonDB
-  }
+// Initialize Firebase Admin using ENV
+admin.initializeApp({
+  credential: admin.credential.cert({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  }),
+  databaseURL: process.env.DATABASE_URL
 });
 
-// Middleware
-app.use(express.json()); // Untuk mem-parsing JSON dari body request
-app.use(express.static(path.join(__dirname, 'public'))); // Menyajikan folder 'public'
+const db = admin.database();
+const decksRef = db.ref('decks');
 
-// Fungsi untuk inisialisasi database (membuat tabel jika belum ada)
-async function initDb() {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS content (
-        id SERIAL PRIMARY KEY,
-        description TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    console.log("Database table 'content' is ready.");
-  } catch (err) {
-    console.error("Error initializing database:", err);
-  }
-}
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// === RUTE API ===
-
-// GET: Mendapatkan semua konten
-app.get('/api/content', async (req, res) => {
-  try {
-    const { rows } = await pool.query('SELECT * FROM content ORDER BY id ASC');
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-
-// POST: Membuat konten baru
-app.post('/api/content', async (req, res) => {
-  const { description } = req.body;
-  if (!description) {
-    return res.status(400).json({ error: 'Description is required' });
-  }
-  try {
-    const { rows } = await pool.query(
-      'INSERT INTO content (description) VALUES ($1) RETURNING *',
-      [description]
-    );
-    res.status(201).json(rows[0]); // 201 = Created
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
+app.get("/deck", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "deck.html"));
 });
-
-// PUT: Mengupdate konten
-app.put('/api/content/:id', async (req, res) => {
-  const { id } = req.params;
-  const { description } = req.body;
-
-  if (!description) {
-    return res.status(400).json({ error: 'Description is required' });
-  }
-
+app.get('/api/decks', async (req, res) => {
   try {
-    const { rows } = await pool.query(
-      'UPDATE content SET description = $1 WHERE id = $2 RETURNING *',
-      [description, id]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Content not found' });
+    const snapshot = await decksRef.once('value');
+    const data = snapshot.val();
+    const formattedData = [];
+    if (data) {
+      Object.keys(data).forEach(key => {
+        const deck = data[key];
+        const contentCount = deck.contents ? Object.keys(deck.contents).length : 0;
+        formattedData.push({
+          id: key,
+          title: deck.title,
+          createdAt: deck.createdAt,
+          contentCount
+        });
+      });
     }
-    res.json(rows[0]);
+    res.json(formattedData);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// DELETE: Menghapus konten
-app.delete('/api/content/:id', async (req, res) => {
+app.post('/api/decks', async (req, res) => {
+  const { title } = req.body;
+  if (!title) return res.status(400).json({ error: 'Title is required' });
+
+  try {
+    const newRef = decksRef.push();
+    const newDeck = {
+      title,
+      createdAt: new Date().toISOString()
+    };
+    await newRef.set(newDeck);
+    res.status(201).json({ id: newRef.key, ...newDeck });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.get('/api/decks/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const { rows } = await pool.query(
-      'DELETE FROM content WHERE id = $1 RETURNING *',
-      [id]
-    );
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Content not found' });
+    const snapshot = await decksRef.child(id).once('value');
+    if (!snapshot.exists()) return res.status(404).json({ error: 'Deck not found' });
+    
+    const deck = snapshot.val();
+    const contents = [];
+    if (deck.contents) {
+      Object.keys(deck.contents).forEach(key => {
+        contents.push({ id: key, ...deck.contents[key] });
+      });
     }
+    
+    res.json({ id, title: deck.title, createdAt: deck.createdAt, contents });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/api/decks/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await decksRef.child(id).remove();
+    res.json({ message: 'Deck deleted' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.post('/api/decks/:id/contents', async (req, res) => {
+  const { id } = req.params;
+  const { description } = req.body;
+  
+  if (!description) return res.status(400).json({ error: 'Description required' });
+
+  try {
+    const contentRef = decksRef.child(id).child('contents').push();
+    const newContent = {
+      description,
+      createdAt: new Date().toISOString()
+    };
+    await contentRef.set(newContent);
+    res.status(201).json({ id: contentRef.key, ...newContent });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/api/decks/:deckId/contents/:contentId', async (req, res) => {
+  const { deckId, contentId } = req.params;
+  const { description } = req.body;
+
+  try {
+    await decksRef.child(deckId).child('contents').child(contentId).update({ description });
+    res.json({ message: 'Content updated' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.delete('/api/decks/:deckId/contents/:contentId', async (req, res) => {
+  const { deckId, contentId } = req.params;
+  try {
+    await decksRef.child(deckId).child('contents').child(contentId).remove();
     res.json({ message: 'Content deleted' });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-
-// === [BARU] RUTE DELETE UNTUK TRUNCATE ===
-// DELETE: Menghapus SELURUH konten (TRUNCATE)
-app.delete('/api/content/all', async (req, res) => {
-  try {
-    // TRUNCATE lebih cepat dari DELETE FROM * dan me-reset counter SERIAL
-    // RESTART IDENTITY akan membuat ID mulai dari 1 lagi
-    await pool.query('TRUNCATE TABLE content RESTART IDENTITY');
-    res.status(200).json({ message: 'All content successfully truncated' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-
-// Menjalankan server
 app.listen(PORT, () => {
-console.log(`Server running on http://localhost:${PORT}`);
-initDb(); // Inisialisasi DB saat server start
+  console.log(`Server running on http://localhost:${PORT}`);
 });
